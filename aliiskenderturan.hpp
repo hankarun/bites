@@ -3,9 +3,10 @@
 #include <stack>
 #include <string>
 #include <vector>
+#include <array>
 
 namespace aliiskenderturan {
-std::string operators = "+-/*";
+std::array<char, 4> operators = {'+','-','/','*'};
 int target = 0;
 bool found = false;
 std::string resultString;
@@ -23,75 +24,76 @@ int caluculate(int a, int b, char op) {
     float s = a / (float)b;
     if (std::fmod(s, 1.0) == 0)
       return (int)s;
-    return 0;
+    return -1;
   }
-
   return 0;
 }
 
-int calculate(std::string postfix) {
+int calculateFromPostfix(const std::vector<const char*>& postfix) {
   std::stack<int> expr;
-  std::stringstream sc(postfix);
-  std::string t;
-  while (sc >> t) {
-    if (operators.find(t) == std::string::npos) {
-      expr.push(std::atoi(t.c_str()));
+  for(auto& t : postfix) {
+    if (std::find(std::begin(operators), std::end(operators), *t) == std::end(operators)) {
+      expr.push(std::atoi(t));
     } else {
       auto f1 = expr.top();
       expr.pop();
       auto f2 = expr.top();
       expr.pop();
-      expr.push(caluculate(f1, f2, t[0]));
+      int result = caluculate(f1, f2, t[0]);
+      if (result == -1)
+        return 0;
+      expr.push(result);
     }
   }
   return expr.top();
 }
 
-std::string convertPostFix(std::string postfix) {
+std::string converToInFix(const std::vector<const char*>& postfix) {
   std::stack<std::string> expr;
-  std::stringstream sc(postfix);
-  std::string t;
-  while (sc >> t) {
-    if (operators.find(t) == std::string::npos) {
+  for (auto& t : postfix) {
+    if (std::find(std::begin(operators), std::end(operators), *t) == std::end(operators)) {
       expr.push(t);
     } else {
       auto f1 = expr.top();
       expr.pop();
       auto f2 = expr.top();
       expr.pop();
-      expr.push("(" + f1 + t + f2 + ")");
+      expr.push("(" + f1 + t[0] + f2 + ")");
     }
   }
   return expr.top();
 }
 
-void brute(std::vector<int> numbers, int stackHeight, std::string eq) {
+void generatePostFix(std::vector<const char*> numbers, int stackHeight, std::vector<const char*> eq) {
   if (found)
     return;
 
   if (stackHeight >= 2) {
-    for (char op : operators) {
-      brute(numbers, stackHeight - 1, eq + " " + op);
+    for (const char& op : operators) {      
+      auto temp = eq;
+      temp.push_back(&op);
+      generatePostFix(numbers, stackHeight - 1, temp);
     }
   }
 
   bool allUsedUp = true;
   for (int i = 0; i < numbers.size(); i++) {
-    if (numbers[i] != -1) {
+    if (numbers[i] != nullptr) {
       allUsedUp = false;
-      int n = numbers[i];
-      numbers[i] = -1;
-      brute(numbers, stackHeight + 1, eq + " " + std::to_string(n));
+      const char* n = numbers[i];
+      numbers[i] = nullptr;
+      auto temp = eq;
+      temp.push_back(n);
+      generatePostFix(numbers, stackHeight + 1, temp);
       numbers[i] = n;
     }
   }
 
   if (allUsedUp && stackHeight == 1) {
-    int result = calculate(eq);
+    int result = calculateFromPostfix(eq);
     if (target == result) {
       found = true;
-      resultString = convertPostFix(eq);
-      //std::cout << eq << " = " << target << " - " << convertPostFix(eq) << std::endl;
+      resultString = converToInFix(eq);
     }
   }
 }
@@ -105,19 +107,22 @@ public:
 
   void SetInputNumbers(const std::string &values) override {
     std::istringstream iss(values);
-    int n;
+    std::string n;
     while (iss >> n) {
       inputNumbers.push_back(n);
     }
   }
 
   const std::string &GetSolution() override {
-    brute(inputNumbers, 0, "");
+    std::vector<const char*> numbers;
+    for(auto& n : inputNumbers)
+      numbers.push_back(n.c_str());
+    generatePostFix(numbers, 0, {});
     return resultString;
   }
 
 private:
   int targetNumber;
-  std::vector<int> inputNumbers;
+  std::vector<std::string> inputNumbers;
 };
 } // namespace aliiskenderturan

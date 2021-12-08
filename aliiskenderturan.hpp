@@ -1,17 +1,19 @@
 #include "INumberSearch.h"
+#include <array>
 #include <sstream>
 #include <stack>
 #include <string>
 #include <vector>
-#include <array>
+
 
 namespace aliiskenderturan {
-std::array<char, 4> operators = {'+','-','/','*'};
+std::array<char, 4> operators = {'+', '-', '/', '*'};
 int target = 0;
 bool found = false;
 std::string resultString;
 
-int caluculate(int a, int b, char op) {
+int caluculate(int a, int b, char op, bool &valid) {
+  valid = true;
   if (op == '+')
     return a + b;
   if (op == '-')
@@ -19,28 +21,33 @@ int caluculate(int a, int b, char op) {
   if (op == '*')
     return a * b;
   if (op == '/') {
-    if (b == 0)
+    if (b == 0) {
+      valid = false;
       return 0;
+    }
     float s = a / (float)b;
     if (std::fmod(s, 1.0) == 0)
       return (int)s;
+    valid = false;
     return -1;
   }
   return 0;
 }
 
-int calculateFromPostfix(const std::vector<const char*>& postfix) {
+int calculateFromPostfix(const std::vector<const char *> &postfix) {
   std::stack<int> expr;
-  for(auto& t : postfix) {
-    if (std::find(std::begin(operators), std::end(operators), *t) == std::end(operators)) {
+  for (auto &t : postfix) {
+    if (std::find(std::begin(operators), std::end(operators), *t) ==
+        std::end(operators)) {
       expr.push(std::atoi(t));
     } else {
       auto f1 = expr.top();
       expr.pop();
       auto f2 = expr.top();
       expr.pop();
-      int result = caluculate(f1, f2, t[0]);
-      if (result == -1)
+      bool operationValid = false;
+      int result = caluculate(f1, f2, t[0], operationValid);
+      if (!operationValid)
         return 0;
       expr.push(result);
     }
@@ -48,10 +55,11 @@ int calculateFromPostfix(const std::vector<const char*>& postfix) {
   return expr.top();
 }
 
-std::string converToInFix(const std::vector<const char*>& postfix) {
+std::string converToInFix(const std::vector<const char *> &postfix) {
   std::stack<std::string> expr;
-  for (auto& t : postfix) {
-    if (std::find(std::begin(operators), std::end(operators), *t) == std::end(operators)) {
+  for (auto &t : postfix) {
+    if (std::find(std::begin(operators), std::end(operators), *t) ==
+        std::end(operators)) {
       expr.push(t);
     } else {
       auto f1 = expr.top();
@@ -64,12 +72,13 @@ std::string converToInFix(const std::vector<const char*>& postfix) {
   return expr.top();
 }
 
-void generatePostFix(std::vector<const char*> numbers, int stackHeight, std::vector<const char*> eq) {
+void generatePostFix(std::vector<const char *> numbers, int stackHeight,
+                     std::vector<const char *> eq) {
   if (found)
     return;
 
   if (stackHeight >= 2) {
-    for (const char& op : operators) {      
+    for (const char &op : operators) {
       auto temp = eq;
       temp.push_back(&op);
       generatePostFix(numbers, stackHeight - 1, temp);
@@ -80,7 +89,7 @@ void generatePostFix(std::vector<const char*> numbers, int stackHeight, std::vec
   for (int i = 0; i < numbers.size(); i++) {
     if (numbers[i] != nullptr) {
       allUsedUp = false;
-      const char* n = numbers[i];
+      const char *n = numbers[i];
       numbers[i] = nullptr;
       auto temp = eq;
       temp.push_back(n);
@@ -114,8 +123,8 @@ public:
   }
 
   const std::string &GetSolution() override {
-    std::vector<const char*> numbers;
-    for(auto& n : inputNumbers)
+    std::vector<const char *> numbers;
+    for (auto &n : inputNumbers)
       numbers.push_back(n.c_str());
     generatePostFix(numbers, 0, {});
     return resultString;

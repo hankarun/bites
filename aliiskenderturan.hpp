@@ -104,43 +104,50 @@ public:
     for (auto &n : inputNumbers)
       numbers.push_back(n.c_str());
 
-    testPostFixPosibilities(numbers, 0, {});
+    testPostFixPosibilities(numbers);
 
     return resultString;
   }
 
 private:
-  bool testPostFixPosibilities(std::vector<const char *> numbers, int stack,
-                                   PostFixEquation eq) {
-
-    int result = 0;
-    if (eq.calculateResult(result)) {
-      if (targetNumber == result) {
-        resultString = eq.toInFix();
-        return true;
-      }
-    }
-
-    if (stack >= 2) {
-      for (const char &op : operators) {
-        auto temp = eq;
-        temp.addItem(&op);
-        if (testPostFixPosibilities(numbers, stack - 1, temp))
+  bool testPostFixPosibilities(std::vector<const char *> _numbers) {
+    struct EqData {
+      std::vector<const char *> numbers;
+      int currentStack;
+      PostFixEquation eq;
+    };
+    std::stack<EqData> eqStack;
+    eqStack.push({_numbers, 0, {}});
+    while (!eqStack.empty()) {
+      auto data = eqStack.top();
+      eqStack.pop();
+      int result = 0;
+      if (data.eq.calculateResult(result)) {
+        if (targetNumber == result) {
+          resultString = data.eq.toInFix();
           return true;
+        }
+      }
+      if (data.currentStack >= 2) {
+        for (const char &op : operators) {
+          auto temp = data.eq;
+          temp.addItem(&op);
+          eqStack.push({data.numbers, data.currentStack - 1, temp});
+        }
+      }
+
+      for (int i = 0; i < data.numbers.size(); i++) {
+        if (data.numbers[i] != nullptr) {
+          const char *n = data.numbers[i];
+          data.numbers[i] = nullptr;
+          auto temp = data.eq;
+          temp.addItem(n);
+          eqStack.push({data.numbers, data.currentStack + 1, temp});
+          data.numbers[i] = n;
+        }
       }
     }
 
-    for (int i = 0; i < numbers.size(); i++) {
-      if (numbers[i] != nullptr) {
-        const char *n = numbers[i];
-        numbers[i] = nullptr;
-        auto temp = eq;
-        temp.addItem(n);
-        if (testPostFixPosibilities(numbers, stack + 1, temp))
-          return true;
-        numbers[i] = n;
-      }
-    }
     return false;
   }
 

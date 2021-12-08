@@ -12,6 +12,7 @@ class PostFixEquation {
     public:
     void addItem(const char* value) { data.push_back(value); }
 
+    //Convert postfix equation to infix string.
     std::string toInFixString()
     {
         std::stack<std::string> expr;
@@ -31,6 +32,7 @@ class PostFixEquation {
         return "";
     }
 
+    //Calculate the result of the equation.
     bool calculateResult(int& result)
     {
         std::stack<int> expr;
@@ -57,6 +59,8 @@ class PostFixEquation {
     }
 
     private:
+
+    //Calculate the result with the operant, check if the operation is valid (no divition by zero, no float divitions)
     int calculate(int a, int b, char op, bool& valid)
     {
         valid = true;
@@ -99,6 +103,7 @@ class NumberSearch : public INumberSearch {
     {
         resultString.clear();
 
+        // Create individual string buffer for integers
         std::istringstream iss(numbers);
         std::string n;
         std::vector<std::string> inputNumbers;
@@ -106,10 +111,12 @@ class NumberSearch : public INumberSearch {
             inputNumbers.push_back(n);
         }
 
+        // Create a pointer buffer to integers
         std::vector<const char*> numbers;
         for (auto& n : inputNumbers)
             numbers.push_back(n.c_str());
 
+        // Bruteforce postfix equations and try to find the solution
         PostFixEquation solution;
         if (testPostFixPosibilities(numbers, solution)) {
             resultString = solution.toInFixString();
@@ -127,10 +134,15 @@ class NumberSearch : public INumberSearch {
             PostFixEquation eq;
         };
         std::stack<EqData> eqStack;
+        // Start with empthy equation
         eqStack.push({ _numbers, 0, {} });
         while (!eqStack.empty()) {
+
+            // Pop one at the top for testing
             auto data = eqStack.top();
             eqStack.pop();
+
+            //If the equation gives correct result return from the function.
             int result = 0;
             if (data.eq.calculateResult(result)) {
                 if (targetNumber == result) {
@@ -139,6 +151,7 @@ class NumberSearch : public INumberSearch {
                 }
             }
 
+            // If there is enough value add for possible operants
             if (data.currentStack >= 2) {
                 for (const char& op : operators) {
                     auto temp = data.eq;
@@ -147,6 +160,8 @@ class NumberSearch : public INumberSearch {
                 }
             }
 
+            // Create a new eqation for each of the numbers in the vector
+            // Disable current integer and create a new variant of the equation.
             for (int i = 0; i < data.numbers.size(); i++) {
                 if (data.numbers[i] != nullptr) {
                     const char* n = data.numbers[i];

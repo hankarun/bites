@@ -12,8 +12,8 @@ class PostFixEquation {
     public:
     void addItem(const char* value) { data.push_back(value); }
 
-    //Convert postfix equation to infix string.
-    std::string toInFixString()
+    // Convert postfix equation to infix string.
+    std::string toInFixString() const
     {
         std::stack<std::string> expr;
         for (auto& t : data) {
@@ -32,8 +32,8 @@ class PostFixEquation {
         return "";
     }
 
-    //Calculate the result of the equation.
-    bool calculateResult(int& result)
+    // Calculate the result of the equation.
+    bool calculateResult(int& result) const
     {
         std::stack<int> expr;
         for (auto& t : data) {
@@ -59,9 +59,8 @@ class PostFixEquation {
     }
 
     private:
-
-    //Calculate the result with the operant, check if the operation is valid (no divition by zero, no float divitions)
-    int calculate(int a, int b, char op, bool& valid)
+    // Calculate the result with the operant, check if the operation is valid (no divition by zero, no float divitions)
+    int calculate(int a, int b, char op, bool& valid) const
     {
         valid = true;
         if (op == '+')
@@ -126,6 +125,18 @@ class NumberSearch : public INumberSearch {
     }
 
     private:
+    bool checkEquation(const PostFixEquation& eq)
+    {
+        // If the equation gives correct result return from the function.
+        int result = 0;
+        if (eq.calculateResult(result)) {
+            if (targetNumber == result) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     bool testPostFixPosibilities(std::vector<const char*> _numbers, PostFixEquation& solution)
     {
         struct EqData {
@@ -133,6 +144,7 @@ class NumberSearch : public INumberSearch {
             int currentStack;
             PostFixEquation eq;
         };
+
         std::stack<EqData> eqStack;
         // Start with empthy equation
         eqStack.push({ _numbers, 0, {} });
@@ -142,20 +154,21 @@ class NumberSearch : public INumberSearch {
             auto data = eqStack.top();
             eqStack.pop();
 
-            //If the equation gives correct result return from the function.
-            int result = 0;
-            if (data.eq.calculateResult(result)) {
-                if (targetNumber == result) {
-                    solution = data.eq;
-                    return true;
-                }
+            if (checkEquation(data.eq)) {
+                solution = data.eq;
+                return true;
             }
 
             // If there is enough value add for possible operants
             if (data.currentStack >= 2) {
                 for (const char& op : operators) {
+
                     auto temp = data.eq;
-                    temp.addItem(&op);
+                    temp.addItem(&op);                    
+                    if (checkEquation(temp)) {
+                        solution = temp;
+                        return true;
+                    }
                     eqStack.push({ data.numbers, data.currentStack - 1, temp });
                 }
             }
@@ -166,8 +179,14 @@ class NumberSearch : public INumberSearch {
                 if (data.numbers[i] != nullptr) {
                     const char* n = data.numbers[i];
                     data.numbers[i] = nullptr;
+
                     auto temp = data.eq;
                     temp.addItem(n);
+                    if (checkEquation(temp)) {
+                        solution = temp;
+                        return true;
+                    }
+
                     eqStack.push({ data.numbers, data.currentStack + 1, temp });
                     data.numbers[i] = n;
                 }
